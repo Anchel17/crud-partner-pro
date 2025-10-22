@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.partnerpro.crud.dto.ProdutoDTO;
-import com.partnerpro.crud.entity.Produto;
 import com.partnerpro.crud.service.ProdutoService;
 
 import jakarta.validation.Valid;
@@ -30,7 +29,7 @@ public class ProdutoController {
     private ProdutoService produtoService;
     
     @GetMapping(produces=MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Produto>> buscarProdutos(){
+    public ResponseEntity<List<ProdutoDTO>> buscarProdutos(){
         return ResponseEntity.ok(this.produtoService.buscarTodosProdutos());
     }
     

@@ -1,5 +1,6 @@
 package com.partnerpro.crud.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +15,10 @@ public class ProdutoService {
     @Autowired
     private ProdutoRepository produtoRepository;
     
-    public List<Produto>buscarTodosProdutos() {
-        return this.produtoRepository.findAllByOrderByIdDesc(); 
+    public List<ProdutoDTO>buscarTodosProdutos() {
+        var produtos = this.produtoRepository.findAllByOrderByIdDesc(); 
+        
+        return transformarProdutosEntityEmProdutosDTO(produtos);
     }
     
     public ProdutoDTO cadastrarProduto(ProdutoDTO produtoDTO) {
@@ -50,5 +53,22 @@ public class ProdutoService {
         }
         
         this.produtoRepository.deleteById(idProduto);
+    }
+    
+    public List<ProdutoDTO> transformarProdutosEntityEmProdutosDTO(List<Produto> produtos){
+        List<ProdutoDTO> produtosDTO = new ArrayList<>();
+        
+        produtos.forEach(p -> {
+            var produtoDTO = new ProdutoDTO();
+            produtoDTO.setId(p.getId());
+            produtoDTO.setNome(p.getNome());
+            produtoDTO.setPreco(p.getPreco());
+            produtoDTO.setCategoria(p.getCategoria());
+            produtoDTO.setDataCriacao(p.getDataCriacao());
+            
+            produtosDTO.add(produtoDTO);
+        });
+        
+        return produtosDTO;
     }
 }
