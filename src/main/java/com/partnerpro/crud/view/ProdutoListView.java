@@ -1,7 +1,11 @@
 package com.partnerpro.crud.view;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import org.apache.logging.log4j.util.Strings;
@@ -14,15 +18,20 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.theme.lumo.LumoUtility.JustifyContent;
 
 @PageTitle("Produtos")
 @Route(value="", layout=MainLayout.class)
@@ -31,9 +40,10 @@ public class ProdutoListView extends VerticalLayout{
     private final Grid<ProdutoDTO> grid = new Grid<>(ProdutoDTO.class);
     private final Dialog dialogProduto = new Dialog();
     private final Dialog dialogExclusao = new Dialog();
+    private final Binder<ProdutoDTO> binder = new Binder<>(ProdutoDTO.class);
 
     private TextField nomeField;
-    private NumberField precoField;
+    private BigDecimalField precoField;
     private TextField categoriaField;
     private DatePicker dataCriacaoField;
 
@@ -56,20 +66,40 @@ public class ProdutoListView extends VerticalLayout{
     }
     
     private void configurarGrid() {
-        grid.setColumns("nome", "preco", "categoria", "dataCriacao");
-        grid.getColumnByKey("nome").setSortable(false);
-        grid.getColumnByKey("preco").setHeader("Preço") ;
-        grid.getColumnByKey("categoria").setSortable(false);
-        grid.getColumnByKey("dataCriacao").setHeader("Data de Criação").setSortable(false);
+        var formatoCurrencyBR = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"));
+        var formatoDataBR = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         
-        grid.addComponentColumn(produto -> new Button("Editar", e -> abrirDialogProduto(produto)));
+        grid.setColumns("nome", "categoria");
+        grid.getColumnByKey("nome").setSortable(false);
+        grid.addColumn(produto -> formatoCurrencyBR.format(produto.getPreco()))
+            .setHeader("Preço")
+            .setAutoWidth(true)
+            .setSortable(true)
+            .setTextAlign(ColumnTextAlign.END);
+
+        grid.getColumnByKey("categoria").setSortable(false);
+        
+        grid.addColumn(produto -> formatoDataBR.format(produto.getDataCriacao()))
+            .setHeader("Data de Criação")
+            .setAutoWidth(true)
+            .setTextAlign(ColumnTextAlign.END);
+        
         grid.addComponentColumn(produto -> {
-             var excluirButton = new Button("Excluir", e -> abrirDialogExclusao(produto));
-             excluirButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-             excluirButton.getStyle().setCursor("pointer");
-             
-             return excluirButton;
-            });
+            var editarButton = new Button("Editar", e -> abrirDialogProduto(produto));
+            editarButton.getStyle().setCursor("pointer");
+            
+            var excluirButton = new Button("Excluir", e -> abrirDialogExclusao(produto));
+            excluirButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+            excluirButton.getStyle().setCursor("pointer");
+
+            var acoesColumnLayout = new HorizontalLayout(editarButton, excluirButton);
+            acoesColumnLayout.setSpacing(true);
+            acoesColumnLayout.setWidthFull();
+            acoesColumnLayout.setJustifyContentMode(JustifyContentMode.CENTER);
+            
+            return acoesColumnLayout;
+        }).setHeader("Ações").setAutoWidth(true).setTextAlign(ColumnTextAlign.CENTER);
+        
         
         grid.setEmptyStateText("Sem produtos cadastrados.");
         
@@ -87,9 +117,24 @@ public class ProdutoListView extends VerticalLayout{
         dialogProduto.setHeaderTitle("Produto");
         
         nomeField = new TextField("Nome");
-        precoField = new NumberField("Preço");
+        precoField = new BigDecimalField("Preço (R$)");
         categoriaField = new TextField("Categoria");
         dataCriacaoField = new DatePicker("Data de Criação");
+        dataCriacaoField.setMax(LocalDate.now());
+        
+        binder.forField(nomeField).asRequired("Nome é obrigatório").bind(ProdutoDTO::getNome, ProdutoDTO::setNome);
+        binder.forField(categoriaField).asRequired("Categoria é obrigatória").bind(ProdutoDTO::getCategoria, ProdutoDTO::setCategoria);
+        
+        binder.forField(precoField)
+            .asRequired("O preço é obrigatório")
+            .withValidator(preco -> Objects.nonNull(preco) && preco.compareTo(BigDecimal.ZERO) > 0,
+                           "O preço deve ser maior que zero")
+            .bind(ProdutoDTO::getPreco, ProdutoDTO::setPreco);
+        
+        binder.forField(dataCriacaoField).asRequired("Data é obrigatória")
+            .withValidator(data -> Objects.nonNull(data) && !data.isAfter(LocalDate.now()), "A data não pode ser no futuro")
+            .bind(ProdutoDTO::getDataCriacao, ProdutoDTO::setDataCriacao);
+
         
         var form = new FormLayout(nomeField, precoField, categoriaField, dataCriacaoField);
         
@@ -146,25 +191,29 @@ public class ProdutoListView extends VerticalLayout{
     
     private void salvarProduto() {
         try {
+            binder.writeBean(produtoAtual);
             produtoAtual.setNome(nomeField.getValue());
             produtoAtual.setCategoria(categoriaField.getValue());
             produtoAtual.setDataCriacao(dataCriacaoField.getValue());
-            produtoAtual.setPreco(Objects.nonNull(precoField.getValue()) ? BigDecimal.valueOf(precoField.getValue()) : null);
+            produtoAtual.setPreco(Objects.nonNull(precoField.getValue()) ? precoField.getValue() : null);
             
             if(Objects.isNull(produtoAtual.getId())) {
                 produtoClient.cadastrarProduto(produtoAtual);
-                Notification.show("Produto criado!");
+                Notification.show("Produto criado!", 3000, Notification.Position.TOP_CENTER);
             }
             else {
                 produtoClient.atualizarProduto(produtoAtual.getId(), produtoAtual);
-                Notification.show("Produto atualizado!");
+                Notification.show("Produto atualizado!", 3000, Notification.Position.TOP_CENTER);
             }
             
             carregarProdutos();
             dialogProduto.close();
         }
+        catch(ValidationException e) {
+            Notification.show("Preencha todos os campos corretamente!", 3000, Notification.Position.TOP_CENTER);
+        }
         catch(Exception e) {
-            Notification.show(e.getMessage());
+            Notification.show("Erro não esperado ao cadastrar/atualizar produto", 3000, Notification.Position.TOP_CENTER);
         }
     }
     
@@ -172,10 +221,11 @@ public class ProdutoListView extends VerticalLayout{
         this.produtoAtual = produtoDTO;
         
         nomeField.setValue(Objects.nonNull(produtoDTO.getNome()) ? produtoDTO.getNome() : "" );
-        precoField.setValue(Objects.nonNull(produtoDTO.getPreco()) ? produtoDTO.getPreco().doubleValue() :  null);
+        precoField.setValue(Objects.nonNull(produtoDTO.getPreco()) ? produtoDTO.getPreco() :  null);
         categoriaField.setValue(Objects.nonNull(produtoDTO.getCategoria()) ? produtoDTO.getCategoria() : "" );
         dataCriacaoField.setValue(produtoDTO.getDataCriacao());
         
+        binder.readBean(produtoDTO);
         dialogProduto.open();
     }
     
