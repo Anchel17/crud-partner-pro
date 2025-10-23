@@ -16,7 +16,7 @@ Aplicação web para cadastro e gestão de produtos, com um dashboard para visua
   - Caso tenha instalado o PgAdmin 4:
     - Clique com o botão direito em "databases" -> create -> database... 
 
-No arquivo application.properties, configure suas credenciais para acesso ao banco:
+No arquivo application.properties (src/main/resources), configure suas credenciais para acesso ao banco:
 ```
 spring.datasource.url=jdbc:postgresql://localhost:5432/partnercrud
 spring.datasource.username=seu_usuario
