@@ -41,6 +41,7 @@ public class ProdutoListView extends VerticalLayout{
     private final Dialog dialogProduto = new Dialog();
     private final Dialog dialogExclusao = new Dialog();
     private final Binder<ProdutoDTO> binder = new Binder<>(ProdutoDTO.class);
+    private final String CURSOR_POINTER = "pointer";
 
     private TextField nomeField;
     private BigDecimalField precoField;
@@ -61,7 +62,7 @@ public class ProdutoListView extends VerticalLayout{
         
         var novoProdutoButton = new Button("Novo Produto", e -> abrirDialogProduto(new ProdutoDTO()));
         novoProdutoButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        novoProdutoButton.getStyle().setCursor("pointer");
+        novoProdutoButton.getStyle().setCursor(CURSOR_POINTER);
         add(novoProdutoButton, grid);
     }
     
@@ -73,6 +74,7 @@ public class ProdutoListView extends VerticalLayout{
         grid.getColumnByKey("nome").setSortable(false);
         grid.addColumn(produto -> formatoCurrencyBR.format(produto.getPreco()))
             .setHeader("Preço")
+            .setComparator(ProdutoDTO::getPreco)
             .setAutoWidth(true)
             .setSortable(true)
             .setTextAlign(ColumnTextAlign.END);
@@ -86,11 +88,11 @@ public class ProdutoListView extends VerticalLayout{
         
         grid.addComponentColumn(produto -> {
             var editarButton = new Button("Editar", e -> abrirDialogProduto(produto));
-            editarButton.getStyle().setCursor("pointer");
+            editarButton.getStyle().setCursor(CURSOR_POINTER);
             
             var excluirButton = new Button("Excluir", e -> abrirDialogExclusao(produto));
             excluirButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-            excluirButton.getStyle().setCursor("pointer");
+            excluirButton.getStyle().setCursor(CURSOR_POINTER);
 
             var acoesColumnLayout = new HorizontalLayout(editarButton, excluirButton);
             acoesColumnLayout.setSpacing(true);
@@ -140,11 +142,11 @@ public class ProdutoListView extends VerticalLayout{
         
         var salvarProdutoButton = new Button("Salvar", e -> salvarProduto());
         salvarProdutoButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        salvarProdutoButton.getStyle().setCursor("pointer");
+        salvarProdutoButton.getStyle().setCursor(CURSOR_POINTER);
         
         var cancelarButton = new Button("Cancelar", e -> dialogProduto.close());
         cancelarButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-        cancelarButton.getStyle().setCursor("pointer");
+        cancelarButton.getStyle().setCursor(CURSOR_POINTER);
         
         var botoesModal = new HorizontalLayout(cancelarButton, salvarProdutoButton);
         botoesModal.setWidthFull();
@@ -169,11 +171,11 @@ public class ProdutoListView extends VerticalLayout{
         });
         
         simButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-        simButton.getStyle().setCursor("pointer");
+        simButton.getStyle().setCursor(CURSOR_POINTER);
         
         var naoButton = new Button("Não", e -> dialogExclusao.close());
         naoButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        naoButton.getStyle().setCursor("pointer");
+        naoButton.getStyle().setCursor(CURSOR_POINTER);
         
         var layout = new HorizontalLayout(naoButton, simButton);
         layout.setWidthFull();

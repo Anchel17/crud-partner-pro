@@ -5,6 +5,8 @@ import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.partnerpro.crud.client.ProdutoClient;
 import com.partnerpro.crud.dto.ProdutoDTO;
 import com.vaadin.flow.component.Text;
@@ -24,6 +26,7 @@ public class DashboardView extends VerticalLayout{
     private static final String CARD_HEIGHT = "150px";
     private static final String CARD_FONT_SIZE = "24px";
     
+    @Autowired
     public DashboardView(ProdutoClient produtoClient) {
         this.produtoClient = produtoClient;
         
